@@ -10,6 +10,8 @@ class OxfCryo700Class(PyTango.DeviceClass):
                               [ PyTango.ArgType.DevVoid, "" ] ],
                  'Stop' : [ [ PyTango.ArgType.DevVoid, "" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
+                 'Turbo' : [ [ PyTango.ArgType.DevVarStringArray, "Turbo (0 or 1 Switch Turbo )" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
                  'Ramp' : [ [ PyTango.ArgType.DevVarStringArray, "Rate, FinalTemperature" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],}
 
@@ -81,6 +83,10 @@ class OxfCryo700Class(PyTango.DeviceClass):
                   'EvapAdjust' : [ [ PyTango.ArgType.DevLong ,
                                     PyTango.AttrDataFormat.SCALAR ,
                                     PyTango.AttrWriteType.READ] ],
+                  'TurboMode' : [ [ PyTango.ArgType.DevString ,
+                                    PyTango.AttrDataFormat.SCALAR ,
+                                    PyTango.AttrWriteType.READ] ],                  
+                  
     }
 
     device_property_list = {'serialPort': [PyTango.DevString,
@@ -164,6 +170,27 @@ class OxfCryo700(PyTango.Device_4Impl):
         dataStr = ''.join(data)
         self.debug_stream("Ramp(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
+        
+    @PyTango.DebugIt()
+    def Turbo(self, args):
+        if len(args) != 1:
+            raise Exception("Wrong number of arguments. Required paramters 0 (switch Turbo off) or 1 (switch Turbo on).")
+        try:
+            turboState = int(args[0])         
+            
+            if turboState != 0 and turboState != 1:
+                raise Exception()
+                
+        except:
+            raise Exception("Wrong type of arguments. Turbo must be an integer, 0 (switch Turbo off) or 1 (switch Turbo on). .")
+ 
+
+        data = [chr(3), chr(CSCOMMAND.TURBO), turboState]
+        dataStr = ''.join(data)
+        self.debug_stream("Turbo(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)        
+        
+
     #------------------------------------------------------------------
     # ATTRIBUTES
     #------------------------------------------------------------------
@@ -361,6 +388,23 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.info_stream("read_EvapAdjust")
         evapAdjust = self.statusPacket.evap_adjust
         the_att.set_value(evapAdjust)
+
+    @PyTango.DebugIt()
+    def is_TurboMode_allowed(self, req_type):
+        return self.get_state() in (PyTango.DevState.ON,)
+
+    @PyTango.DebugIt()
+    def read_TurboMode(self, the_att):
+        self.info_stream("read_EvapAdjust")    
+        flow = self.statusPacket.gas_flow
+        phase = self.statusPacket.phase
+        self.info_stream("flow: %f , phase: %s " %(flow, phase))    
+        if flow > 5 and phase != "Cool":
+            turbomode = True
+        else:
+            turbomode = False
+        the_att.set_value(turbomode)
+
 
     
     @PyTango.InfoIt()
