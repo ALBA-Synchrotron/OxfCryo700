@@ -12,6 +12,8 @@ class OxfCryo700Class(PyTango.DeviceClass):
                               [ PyTango.ArgType.DevVoid, "" ] ],
                  'Turbo' : [ [ PyTango.ArgType.DevVarStringArray, "Turbo (0 or 1 Switch Turbo )" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
+                 'Cool' : [ [ PyTango.ArgType.DevInt, "Temperature in Kelvins, Value between 80 to 400 " ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
                  'Ramp' : [ [ PyTango.ArgType.DevVarStringArray, "Rate, FinalTemperature" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],}
 
@@ -190,6 +192,30 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.debug_stream("Turbo(): sending data: %s" % dataStr)
         self.serial.write(dataStr)        
         
+
+    @PyTango.DebugIt()
+    def Cool(self, args):
+        if len(args) != 1:
+            raise Exception("Wrong number of arguments. Required parameter of Temp, between 80 to 400 ).")
+        try:
+            coolValue = int(args[0])         
+            
+            if 80 > coolValue or coolValue > 400:
+                raise Exception()
+                
+        except:
+            raise Exception("Wrong arguments. Cool only accept values between 80 to 400")
+        
+        
+        coolValue = coolValue * 100
+        HIBYTE, LOBYTE = splitBytes(coolValue)
+
+        data = [chr(4), chr(CSCOMMAND.COOL), HIBYTE, LOBYTE]
+        dataStr = ''.join(data)
+        self.debug_stream("Cool(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)      
+
+
 
     #------------------------------------------------------------------
     # ATTRIBUTES
@@ -395,7 +421,7 @@ class OxfCryo700(PyTango.Device_4Impl):
 
     @PyTango.DebugIt()
     def read_TurboMode(self, the_att):
-        self.info_stream("read_EvapAdjust")    
+        self.info_stream("read_TurboModet")    
         flow = self.statusPacket.gas_flow
         phase = self.statusPacket.phase
         self.info_stream("flow: %f , phase: %s " %(flow, phase))    
