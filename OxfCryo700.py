@@ -12,8 +12,10 @@ class OxfCryo700Class(PyTango.DeviceClass):
                               [ PyTango.ArgType.DevVoid, "" ] ],
                  'Turbo' : [ [ PyTango.ArgType.DevVarStringArray, "Turbo (0 or 1 Switch Turbo )" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
-                 'Cool' : [ [ PyTango.ArgType.DevInt, "Temperature in Kelvins, Value between 80 to 400 " ],
+
+                 'Cool' : [ [ PyTango.ArgType.DevDouble, "Temperature in Kelvins, Value between 80 to 400 " ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
+
                  'Ramp' : [ [ PyTango.ArgType.DevVarStringArray, "Rate, FinalTemperature" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],}
 
@@ -193,12 +195,12 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)        
         
 
+
     @PyTango.DebugIt()
-    def Cool(self, args):
-        if len(args) != 1:
-            raise Exception("Wrong number of arguments. Required parameter of Temp, between 80 to 400 ).")
+    def Cool(self, temp):
+
         try:
-            coolValue = int(args[0])         
+            coolValue = temp        
             
             if 80 > coolValue or coolValue > 400:
                 raise Exception()
@@ -207,7 +209,7 @@ class OxfCryo700(PyTango.Device_4Impl):
             raise Exception("Wrong arguments. Cool only accept values between 80 to 400")
         
         
-        coolValue = coolValue * 100
+        coolValue = int(coolValue * 100)
         HIBYTE, LOBYTE = splitBytes(coolValue)
 
         data = [chr(4), chr(CSCOMMAND.COOL), HIBYTE, LOBYTE]
