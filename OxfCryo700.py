@@ -10,6 +10,8 @@ class OxfCryo700Class(PyTango.DeviceClass):
                               [ PyTango.ArgType.DevVoid, "" ] ],
                  'Stop' : [ [ PyTango.ArgType.DevVoid, "" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
+                 'Purge' : [ [ PyTango.ArgType.DevVoid, "" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
                  'Turbo' : [ [ PyTango.ArgType.DevVarStringArray, "Turbo (0 or 1 Switch Turbo )" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
 
@@ -145,6 +147,13 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.debug_stream("Restart(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
+    @PyTango.DebugIt()
+    def Purge(self):
+        data = [chr(2),chr(CSCOMMAND.PURGE)]
+        dataStr = ''.join(data)
+        self.debug_stream("PURGE(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
     def is_Stop_allowed(self):
         return self.get_state() == PyTango.DevState.ON
 
@@ -194,6 +203,28 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.debug_stream("Turbo(): sending data: %s" % dataStr)
         self.serial.write(dataStr)        
         
+
+
+
+     
+#    @PyTango.DebugIt()
+#    def Cool(self, args):
+#       msg = "Wrong Value, the Cryostream Cooler operates from 80K to 400K"
+#        value = args[0]
+#        
+#        if value < 80 and value > 400 :
+#          raise Exception(msg)
+#        
+#        finalTemp = int(finalTemp * 100) #transfering to centi-Kelvin
+#        finalTemp =  splitBytes(finalTemp)  
+#          
+#        data = [chr(43), chr(CSCOMMAND.COOL), HIBYTE(finalTemp), LOWBYTE(finalTemp)]
+#        dataStr = ''.join(data)
+#        self.debug_stream("Cool(): sending data: %s" % dataStr)
+#        self.serial.write(dataStr)        
+
+
+
 
 
     @PyTango.DebugIt()
