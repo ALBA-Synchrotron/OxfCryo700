@@ -1,17 +1,23 @@
 import PyTango
 import sys
-import serial
 import threading
+
+import serial
+
 from oxfordcryo import StatusPacket, CSCOMMAND, splitBytes
+
 
 class OxfCryo700Class(PyTango.DeviceClass):
 
     cmd_list = { 'Restart' : [ [ PyTango.ArgType.DevVoid, "" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
+
                  'Stop' : [ [ PyTango.ArgType.DevVoid, "" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
-                 'Purge' : [ [ PyTango.ArgType.DevVoid, "" ],
-                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'Purge': [[PyTango.ArgType.DevVoid, ""],
+                           [PyTango.ArgType.DevVoid, ""]],
+
                  'Turbo' : [ [ PyTango.ArgType.DevVarStringArray, "Turbo (0 or 1 Switch Turbo )" ],
                               [ PyTango.ArgType.DevVoid, "" ] ],
 
@@ -19,7 +25,37 @@ class OxfCryo700Class(PyTango.DeviceClass):
                               [ PyTango.ArgType.DevVoid, "" ] ],
 
                  'Ramp' : [ [ PyTango.ArgType.DevVarStringArray, "Rate, FinalTemperature" ],
-                              [ PyTango.ArgType.DevVoid, "" ] ],}
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'Pause' : [ [ PyTango.ArgType.DevVoid, "Pause command identifier - enter temporary Hold" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'Plat' : [ [ PyTango.ArgType.DevDouble, "Plat command identifier - parameter follows" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'End' : [ [ PyTango.ArgType.DevDouble, "End command identifier - parameter follows" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'Resume' : [ [ PyTango.ArgType.DevVoid, "Resume command identifier - exit temporary Hold" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'CryoShutter_Start_Auto' : [ [
+                     PyTango.ArgType.DevDouble, "Shut the CryoShutter for the specified length of time" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'CryoShutter_Start_Man' : [ [ PyTango.ArgType.DevVoid,
+                                   "Shut the CryoShutter until a CSCOMMAND_CRYOSHUTTER_STOP is received" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'CryoShutter_Stop' : [ [ PyTango.ArgType.DevVoid,
+                                   "Open the CryoShutter" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 'Status_Format' : [ [ PyTango.ArgType.DevVarStringArray,
+                                   "Set status packet format" ],
+                              [ PyTango.ArgType.DevVoid, "" ] ],
+
+                 }
 
     attr_list = { 'GasSetPoint' : [ [ PyTango.ArgType.DevDouble ,
                                     PyTango.AttrDataFormat.SCALAR ,
@@ -89,7 +125,7 @@ class OxfCryo700Class(PyTango.DeviceClass):
                   'EvapAdjust' : [ [ PyTango.ArgType.DevLong ,
                                     PyTango.AttrDataFormat.SCALAR ,
                                     PyTango.AttrWriteType.READ] ],
-                  'TurboMode' : [ [ PyTango.ArgType.DevString ,
+                  'TurboMode' : [ [ PyTango.ArgType.DevBoolean ,
                                     PyTango.AttrDataFormat.SCALAR ,
                                     PyTango.AttrWriteType.READ] ],                  
                   
@@ -169,6 +205,12 @@ class OxfCryo700(PyTango.Device_4Impl):
 
     @PyTango.DebugIt()
     def Ramp(self, args):
+        """
+        The CSCOMMAND_RAMP command packet, size = 6
+        The Params[] array consists of a short containing desired ramp rate in K/hour,
+        followed by a short containing the end temperature in centi-Kelvin
+        """
+
         if len(args) != 2:
             raise Exception("Wrong number of arguments. Required paramters are ramp and end temperature.")
         try:
@@ -186,6 +228,11 @@ class OxfCryo700(PyTango.Device_4Impl):
         
     @PyTango.DebugIt()
     def Turbo(self, args):
+        """
+        The CSCOMMAND_TURBO command packet, size = 3
+        The Params[] array consists of a single char taking the value either 0
+        (switch Turbo off) or 1 (switch Turbo on)
+        """
         if len(args) != 1:
             raise Exception("Wrong number of arguments. Required paramters 0 (switch Turbo off) or 1 (switch Turbo on).")
         try:
@@ -201,45 +248,21 @@ class OxfCryo700(PyTango.Device_4Impl):
         data = [chr(3), chr(CSCOMMAND.TURBO), turboState]
         dataStr = ''.join(data)
         self.debug_stream("Turbo(): sending data: %s" % dataStr)
-        self.serial.write(dataStr)        
-        
-
-
-
-     
-#    @PyTango.DebugIt()
-#    def Cool(self, args):
-#       msg = "Wrong Value, the Cryostream Cooler operates from 80K to 400K"
-#        value = args[0]
-#        
-#        if value < 80 and value > 400 :
-#          raise Exception(msg)
-#        
-#        finalTemp = int(finalTemp * 100) #transfering to centi-Kelvin
-#        finalTemp =  splitBytes(finalTemp)  
-#          
-#        data = [chr(43), chr(CSCOMMAND.COOL), HIBYTE(finalTemp), LOWBYTE(finalTemp)]
-#        dataStr = ''.join(data)
-#        self.debug_stream("Cool(): sending data: %s" % dataStr)
-#        self.serial.write(dataStr)        
-
-
-
-
+        self.serial.write(dataStr)
 
     @PyTango.DebugIt()
     def Cool(self, temp):
-
+        """
+        The	CSCOMMAND_COOL command packet, size = 4
+        The Params[] array consists of a short containing the end temperature in centi-Kelvin
+        """
         try:
-            coolValue = temp        
-            
-            if 80 > coolValue or coolValue > 400:
+            coolValue = temp
+            if not (80 <= coolValue <= 400):
                 raise Exception()
-                
         except:
             raise Exception("Wrong arguments. Cool only accept values between 80 to 400")
-        
-        
+
         coolValue = int(coolValue * 100)
         HIBYTE, LOBYTE = splitBytes(coolValue)
 
@@ -249,6 +272,107 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)      
 
 
+    @PyTango.DebugIt()
+    def Pause(self):
+        data = [chr(2),chr(CSCOMMAND.PAUSE)]
+        dataStr = ''.join(data)
+        self.debug_stream("Pause(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+    @PyTango.DebugIt()
+    def Resume(self):
+        data = [chr(2),chr(CSCOMMAND.RESUME)]
+        dataStr = ''.join(data)
+        self.debug_stream("Resume(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+
+
+    @PyTango.DebugIt()
+    def Plat(self, time):
+        """
+        The CSCOMMAND_PLAT command packet, size = 4
+        The Params[] array consists of a short containing the duration of the
+        Plat in minutes
+        """
+
+        val = int(time)
+        HIBYTE, LOBYTE = splitBytes(val)
+        data = [chr(4), chr(CSCOMMAND.PLAT), HIBYTE, LOBYTE]
+        dataStr = ''.join(data)
+        self.debug_stream("Plat(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+    @PyTango.DebugIt()
+    def End(self, values):
+        """
+        The CSCOMMAND_END command packet, size = 4
+        The Params[] array consists of a short containing desired ramp rate in K/hour
+        """
+
+        val = int(values)
+        HIBYTE, LOBYTE = splitBytes(val)
+        data = [chr(4), chr(CSCOMMAND.END), HIBYTE, LOBYTE]
+        dataStr = ''.join(data)
+        self.debug_stream("End(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+    @PyTango.DebugIt()
+    def CryoShutter_Start_Auto(self, values):
+        """
+        The CSCOMMAND_CRYOSHUTTER_START_AUTO command packet, size = 3
+        The Params[] array consists of a short containing the duration of the
+        anneal time in tenths of a second
+        """
+        val = int(values*10)
+        data = [chr(3), chr(CSCOMMAND.CRYOSHUTTER_START_AUTO), str(val)]
+        dataStr = ''.join(data)
+        self.debug_stream("CryoShutter_Start_Auto(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+    @PyTango.DebugIt()
+    def CryoShutter_Start_Man(self):
+        """
+        The	CSCOMMAND_CRYOSHUTTER_START_MAN command packet, size = 2
+        Shut until CSCOMMAND_CRYOSHUTTER_STOP
+        """
+        data = [chr(2), chr(CSCOMMAND.CRYOSHUTTER_START_MAN)]
+        dataStr = ''.join(data)
+        self.debug_stream("CryoShutter_Start_Man(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+    @PyTango.DebugIt()
+    def CryoShutter_Stop(self):
+        """
+        The	CSCOMMAND_CRYOSHUTTER_STOP command packet, size = 2
+        Open the CryoShutter
+        """
+        data = [chr(2), chr(CSCOMMAND.CRYOSHUTTER_STOP)]
+        dataStr = ''.join(data)
+        self.debug_stream("CryoShutter_Stop(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
+
+
+    @PyTango.DebugIt()
+    def Status_Format(self, args):
+        """
+        The CSCOMMAND_SETSTATUSFORMAT command packet, size = 3
+        """
+
+        if len(args) != 1:
+            raise Exception("Wrong number of arguments. Required paramters 0 or 1.")
+        try:
+            val = int(args[0])
+            if val != 0 and val != 1:
+                raise Exception()
+        except:
+            raise Exception("Wrong type of arguments. Status_Format must be an integer, 0 or 1.")
+
+
+        data = [chr(3), chr(CSCOMMAND.SETSTATUSFORMAT), values]
+        dataStr = ''.join(data)
+        self.debug_stream("Status_Format(): sending data: %s" % dataStr)
+        self.serial.write(dataStr)
 
     #------------------------------------------------------------------
     # ATTRIBUTES

@@ -1,5 +1,3 @@
-import time
-
 """ BL13-XALOC
       End station
         Elements
@@ -122,11 +120,41 @@ class StatusPacket:
     SoftwareVersion_c_idx = 30
     EvapAdjust_c_idx = 31
 
-    RUNMODE_CODES = ['StartUp','StartUpFail','StartUpOK','Run','SetUp','ShutdownOK','ShutdownFail']
+    RUNMODE_CODES = ['StartUp','StartUpFail','StartUpOK','Run','SetUp',
+                     'ShutdownOK','ShutdownFail']
 
-    PHASE_CODES = ['Ramp','Cool','Plat','Hold','End','Purge','DeletePhase','LoadProgram','SaveProgram','Soak','Wait']
+    PHASE_CODES = ['Ramp','Cool','Plat','Hold','End','Purge','DeletePhase',
+                   'LoadProgram','SaveProgram','Soak','Wait']
 
-    ALARM_CODES = ['AlarmConditionNone','AlarmConditionStopPressed','AlarmConditionStopCommand','AlarmConditionEnd','AlarmConditionPurge','AlarmConditionTempWarning','AlarmConditionHighPressure','AlarmConditionVacuum','AlarmConditionStartUpFail','AlarmConditionLowFlow','AlarmConditionTempFail','AlarmConditionTempReadingError','AlarmConditionSensorFail','AlarmConditionBrownOut','AlarmConditionHeatsinkOverheat','AlarmConditionPsuOverheat','AlarmConditionPowerLoss']
+    ALARM_CODES = [ 'AlarmConditionNone','AlarmConditionStopPressed',
+                    'AlarmConditionStopCommand','AlarmConditionEnd',
+                    'AlarmConditionPurge','AlarmConditionTempWarning',
+                    'AlarmConditionHighPressure','AlarmConditionVacuum',
+                    'AlarmConditionStartUpFail','AlarmConditionLowFlow',
+                    'AlarmConditionTempFail','AlarmConditionTempReadingError',
+                    'AlarmConditionSensorFail','AlarmConditionBrownOut',
+                    'AlarmConditionHeatsinkOverheat',
+                    'AlarmConditionPsuOverheat',
+                    'AlarmConditionPowerLoss',
+                    'AlarmConditionRefrigeratorTooCold',
+                    'AlarmConditionRefrigeratorTimedOut',
+                    'AlarmConditionCryodriveNotResponding',
+                    'AlarmConditionCryodriveError',
+                    'AlarmConditionNoNitrogen',
+                    'AlarmConditionNoHelium',
+                    'AlarmConditionVacuumGauge',
+                    'AlarmConditionVacuumReading',
+                    'AlarmConditionRS232Error',
+                    'AlarmConditionColdheadTempWarning',
+                    'AlarmConditionColdheadTempError',
+                    'AlarmConditionWaitForEnd',
+                    'AlarmConditionDoNotOpen',
+                    'AlarmConditionSensorNotDisconnected',
+                    'AlarmConditionCryostatOpen',
+                    'AlarmConditionCryostatOpenTimeOut',
+                    'AlarmConditionHighTempWarning',
+                    'AlarmConditionHighTempError'
+                    ]
 
     def __init__(self, data):
         self.length = data[self.Length_c_idx]
@@ -205,7 +233,14 @@ class Struct:
     def __init__(self, **entries): self.__dict__.update(entries)
 
 Enum = Struct
-CSCOMMAND = Enum(RESTART=10, RAMP=11, PLAT=12, HOLD=13, COOL=14, END=15, PURGE=16, PAUSE=17, RESUME=18, STOP=19, TURBO=20)
+CSCOMMAND = Enum(RESTART=10, RAMP=11, PLAT=12, HOLD=13, COOL=14, END=15,
+                 PURGE=16, PAUSE=17, RESUME=18, STOP=19, TURBO=20,
+                 SETSTATUSFORMAT=40, CRYOSHUTTER_START_AUTO=80,
+                 CRYOSHUTTER_START_MAN=81, CRYOSHUTTER_STOP=82)
+
+
+
+
 
 def splitBytes(number):
     """splits high and low byte (two less significant bytes) of an integer, and returns them as chars"""
