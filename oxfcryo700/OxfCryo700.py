@@ -185,9 +185,6 @@ class OxfCryo700(PyTango.Device_4Impl):
     # COMMANDS
     # ------------------------------------------------------------------
 
-    def is_Restart_allowed(self):
-        return self.get_state() == PyTango.DevState.ON
-
     @PyTango.DebugIt()
     def Restart(self):
         data = [chr(2), chr(CSCOMMAND.RESTART)]
@@ -202,18 +199,12 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.debug_stream("PURGE(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    def is_Stop_allowed(self):
-        return self.get_state() == PyTango.DevState.ON
-
     @PyTango.DebugIt()
     def Stop(self):
         data = [chr(2), chr(CSCOMMAND.STOP)]
         dataStr = ''.join(data)
         self.debug_stream("Stop(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
-
-    def is_Ramp_allowed(self):
-        return self.get_state() == PyTango.DevState.ON
 
     @PyTango.DebugIt()
     def Ramp(self, args):
@@ -406,9 +397,6 @@ class OxfCryo700(PyTango.Device_4Impl):
     def read_attr_hardware(self, data):
         self.info_stream('In read_attr_hardware')
 
-    @PyTango.DebugIt()
-    def is_GasSetPoint_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_GasSetPoint(self, the_att):
@@ -416,9 +404,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         gasSetPoint = self.statusPacket.gas_set_point
         the_att.set_value(gasSetPoint)
 
-    @PyTango.DebugIt()
-    def is_GasTemp_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_GasTemp(self, the_att):
@@ -426,9 +411,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         gasTemp = self.statusPacket.gas_temp
         the_att.set_value(gasTemp)
 
-    @PyTango.DebugIt()
-    def is_GasError_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_GasError(self, the_att):
@@ -436,9 +418,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         gasError = self.statusPacket.gas_error
         the_att.set_value(gasError)
 
-    @PyTango.DebugIt()
-    def is_RunMode_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_RunMode(self, the_att):
@@ -446,9 +425,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         runMode = self.statusPacket.run_mode
         the_att.set_value(runMode)
 
-    @PyTango.DebugIt()
-    def is_Phase_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_Phase(self, the_att):
@@ -456,9 +432,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         phase = self.statusPacket.phase
         the_att.set_value(phase)
 
-    @PyTango.DebugIt()
-    def is_RampRate_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_RampRate(self, the_att):
@@ -466,9 +439,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         rampRate = self.statusPacket.ramp_rate
         the_att.set_value(rampRate)
 
-    @PyTango.DebugIt()
-    def is_TargetTemp_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_TargetTemp(self, the_att):
@@ -476,9 +446,6 @@ class OxfCryo700(PyTango.Device_4Impl):
         targetTemp = self.statusPacket.target_temp
         the_att.set_value(targetTemp)
 
-    @PyTango.DebugIt()
-    def is_EvapTemp_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_EvapTemp(self, the_att):
@@ -487,18 +454,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(evapTemp)
 
     @PyTango.DebugIt()
-    def is_SuctTemp_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_SuctTemp(self, the_att):
         self.info_stream("read_SuctTemp")
         suctTemp = self.statusPacket.suct_temp
         the_att.set_value(suctTemp)
-
-    @PyTango.DebugIt()
-    def is_GasFlow_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_GasFlow(self, the_att):
@@ -507,18 +466,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(gasFlow)
 
     @PyTango.DebugIt()
-    def is_GasHeat_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_GasHeat(self, the_att):
         self.info_stream("read_GasHeat")
         gasHeat = self.statusPacket.gas_heat
         the_att.set_value(gasHeat)
-
-    @PyTango.DebugIt()
-    def is_EvapHeat_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_EvapHeat(self, the_att):
@@ -527,18 +478,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(evapHeat)
 
     @PyTango.DebugIt()
-    def is_SuctHeat_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_SuctHeat(self, the_att):
         self.info_stream("read_SuctHeat")
         suctHeat = self.statusPacket.suct_heat
         the_att.set_value(suctHeat)
-
-    @PyTango.DebugIt()
-    def is_LinePressure_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_LinePressure(self, the_att):
@@ -547,18 +490,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(linePressure)
 
     @PyTango.DebugIt()
-    def is_Alarm_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_Alarm(self, the_att):
         self.info_stream("read_Alarm")
         alarm = self.statusPacket.alarm
         the_att.set_value(alarm)
-
-    @PyTango.DebugIt()
-    def is_RunTime_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_RunTime(self, the_att):
@@ -569,18 +504,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(runTime)
 
     @PyTango.DebugIt()
-    def is_ControllerNumber_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_ControllerNr(self, the_att):
         self.info_stream("read_ControllerNumber")
         nr = self.statusPacket.controller_nb
         the_att.set_value(nr)
-
-    @PyTango.DebugIt()
-    def is_ControllerNr_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_SoftwareVersion(self, the_att):
@@ -589,18 +516,10 @@ class OxfCryo700(PyTango.Device_4Impl):
         the_att.set_value(ver)
 
     @PyTango.DebugIt()
-    def is_EvepAdjust_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
-
-    @PyTango.DebugIt()
     def read_EvapAdjust(self, the_att):
         self.info_stream("read_EvapAdjust")
         evapAdjust = self.statusPacket.evap_adjust
         the_att.set_value(evapAdjust)
-
-    @PyTango.DebugIt()
-    def is_TurboMode_allowed(self, req_type):
-        return self.get_state() in (PyTango.DevState.ON,)
 
     @PyTango.DebugIt()
     def read_TurboMode(self, the_att):
