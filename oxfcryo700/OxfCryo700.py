@@ -1,7 +1,5 @@
-import sys
 import threading
 import serial
-import PyTango
 from tango import DevState
 from tango.server import Device, attribute, command
 from tango.server import device_property
@@ -26,7 +24,6 @@ class OxfCryo700(Device):
 
     # ------------------------------------------------------------------
 
-    @PyTango.DebugIt()
     def delete_device(self):
         self.statusThreadStop.set()
         self.statusThread.join(3.0)
@@ -36,7 +33,6 @@ class OxfCryo700(Device):
     # COMMANDS
     # ------------------------------------------------------------------
 
-    @PyTango.DebugIt()
     @command
     def Restart(self):
         data = [chr(2), chr(CSCOMMAND.RESTART)]
@@ -44,7 +40,6 @@ class OxfCryo700(Device):
         self.debug_stream("Restart(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def Purge(self):
         data = [chr(2), chr(CSCOMMAND.PURGE)]
@@ -52,7 +47,6 @@ class OxfCryo700(Device):
         self.debug_stream("PURGE(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def Stop(self):
         data = [chr(2), chr(CSCOMMAND.STOP)]
@@ -60,7 +54,6 @@ class OxfCryo700(Device):
         self.debug_stream("Stop(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=(float,), doc_in='Rate and FinalTemperature')
     def Ramp(self, args):
         """
@@ -86,7 +79,6 @@ class OxfCryo700(Device):
         self.debug_stream("Ramp(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=bool, doc_in='Turn on the Turbo')
     def Turbo(self, turn_on):
         """
@@ -103,7 +95,6 @@ class OxfCryo700(Device):
         self.debug_stream("Turbo(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=float, doc_in='Temperature between 80 to 400 Kelvins')
     def Cool(self, temp):
         """
@@ -123,7 +114,6 @@ class OxfCryo700(Device):
         self.debug_stream("Cool(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def Pause(self):
         data = [chr(2), chr(CSCOMMAND.PAUSE)]
@@ -131,7 +121,6 @@ class OxfCryo700(Device):
         self.debug_stream("Pause(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def Resume(self):
         data = [chr(2), chr(CSCOMMAND.RESUME)]
@@ -139,7 +128,6 @@ class OxfCryo700(Device):
         self.debug_stream("Resume(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=int, doc_in='Plat command identifier - parameter '
                                   'follows')
     def Plat(self, val):
@@ -155,7 +143,6 @@ class OxfCryo700(Device):
         self.debug_stream("Plat(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=int, doc_in='End command identifier - parameter follows')
     def End(self, val):
         """
@@ -170,7 +157,6 @@ class OxfCryo700(Device):
         self.debug_stream("End(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=float, doc_in='Shyt the Cryosutter for the specified '
                                     'length of time.')
     def CryoShutter_Start_Auto(self, value):
@@ -186,7 +172,6 @@ class OxfCryo700(Device):
             "CryoShutter_Start_Auto(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def CryoShutter_Start_Man(self):
         """
@@ -199,7 +184,6 @@ class OxfCryo700(Device):
             "CryoShutter_Start_Man(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command
     def CryoShutter_Stop(self):
         """
@@ -211,7 +195,6 @@ class OxfCryo700(Device):
         self.debug_stream("CryoShutter_Stop(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
-    @PyTango.DebugIt()
     @command(dtype_in=(str,), doc_in='Set status packet format')
     def Status_Format(self, args):
         """
@@ -239,97 +222,81 @@ class OxfCryo700(Device):
     # ATTRIBUTES
     # ------------------------------------------------------------------
 
-    @PyTango.DebugIt()
     @attribute(name='GasSetPoint', unit='K')
     def gas_set_point(self):
         self.info_stream("read_GasSetPoint")
         return self.statusPacket.gas_set_point
 
-    @PyTango.DebugIt()
     @attribute(name='GasTemp', unit='K')
     def gas_temp(self):
         self.info_stream("read_GasSetPoint")
         return self.statusPacket.gas_temp
 
-    @PyTango.DebugIt()
     @attribute(name='GasError', unit='K')
     def gas_error(self):
         self.info_stream("read_GasError")
         return self.statusPacket.gas_error
 
-    @PyTango.DebugIt()
     @attribute(name='RunMode', dtype=str)
     def run_mode(self):
         self.info_stream("read_RunMode")
         return self.statusPacket.run_mode
 
-    @PyTango.DebugIt()
     @attribute(name='Phase', dtype=str)
     def read_Phase(self):
         self.info_stream("read_Phase")
         return self.statusPacket.phase
 
-    @PyTango.DebugIt()
     @attribute(name='RampRate', dtype=int)
     def ramp_rate(self):
         self.info_stream("read_RampRate")
         return self.statusPacket.ramp_rate
 
-    @PyTango.DebugIt()
     @attribute(name='TargetTemp')
     def target_temp(self, the_att):
         self.info_stream("read_TargetTemp")
         return self.statusPacket.target_temp
 
-    @PyTango.DebugIt()
     @attribute(name='EvapTemp', unit='K')
     def read_EvapTemp(self):
         self.info_stream("read_EvapTemp")
         return self.statusPacket.evap_temp
 
-    @PyTango.DebugIt()
     @attribute(name='SuctTemp', unit='K')
     def suct_temp(self):
         self.info_stream("read_SuctTemp")
         return self.statusPacket.suct_temp
 
-    @PyTango.DebugIt()
     @attribute(name='GasFlow', unit='l/min')
     def gas_flow(self):
         self.info_stream("read_GasFlow")
         return self.statusPacket.gas_flow
 
-    @PyTango.DebugIt()
     @attribute(name='GasHeat', unit='%')
     def gas_heat(self):
         self.info_stream("read_GasHeat")
         return self.statusPacket.gas_heat
 
-    @PyTango.DebugIt()
     @attribute(name='EvapHeat', unit='%')
     def evap_heat(self):
         self.info_stream("read_EvapHeat")
         return self.statusPacket.evap_heat
 
-    @PyTango.DebugIt()
     @attribute(name='SuctHeat', unit='%')
     def suct_heat(self):
         self.info_stream("read_SuctHeat")
         return self.statusPacket.suct_heat
 
-    @PyTango.DebugIt()
     @attribute(name='LinePressure', unit='bar')
     def line_pressure(self):
         self.info_stream("read_LinePressure")
         return self.statusPacket.line_pressure
 
-    @PyTango.DebugIt()
     @attribute(name='Alarm', dtype=str)
     def alarm(self):
         self.info_stream("read_Alarm")
         return self.statusPacket.alarm
 
-    @PyTango.DebugIt()
     @attribute(name='RunTime', dtype=str)
     def run_time(self):
         self.info_stream("read_RunTime")
@@ -338,25 +305,21 @@ class OxfCryo700(Device):
                                         self.statusPacket.run_mins)
         return result
 
-    @PyTango.DebugIt()
     @attribute(name='ControllerNr', dtype=int)
     def controller_number(self):
         self.info_stream("read_ControllerNumber")
         return self.statusPacket.controller_nb
 
-    @PyTango.DebugIt()
     @attribute(name='SoftwareVersion', dtype=int)
     def software_version(self):
         self.info_stream("read_SoftwareVersion")
         return self.statusPacket.software_version
 
-    @PyTango.DebugIt()
     @attribute(name='EvapAdjust', dtype=int)
     def evap_adjust(self):
         self.info_stream("read_EvapAdjust")
         return self.statusPacket.evap_adjust
 
-    @PyTango.DebugIt()
     @attribute(name='TurboMode', dtype=bool)
     def turbo_mode(self):
         self.info_stream("read_TurboModet")
@@ -369,7 +332,6 @@ class OxfCryo700(Device):
             turbomode = False
         return turbomode
 
-    @PyTango.InfoIt()
     def updateStatusPacket(self):
         self.statusThreadStop.clear()
         # flushing input buffer
