@@ -13,11 +13,11 @@ class OxfCryo700(Device):
         Device.init_device(self)
         self.info_stream('In Python init_device method')
         self.serial = serial.Serial(self.port)
-        self.statusPacket = None
-        self.statusThread = threading.Thread(group=None,
-                                             target=self.updateStatusPacket)
-        self.statusThreadStop = threading.Event()
-        self.statusThread.start()
+        self.status_packet = None
+        self.status_thread = threading.Thread(group=None,
+                                              target=self.update_status_packet)
+        self.status_thread_stop = threading.Event()
+        self.status_thread.start()
         self.set_state(DevState.ON)
         self.attr_short_rw = 66
         self.attr_long = 1246
@@ -25,8 +25,8 @@ class OxfCryo700(Device):
     # ------------------------------------------------------------------
 
     def delete_device(self):
-        self.statusThreadStop.set()
-        self.statusThread.join(3.0)
+        self.status_thread_stop.set()
+        self.status_thread.join(3.0)
         self.info_stream('OxfCryo700.delete_device')
 
     # ------------------------------------------------------------------
@@ -208,7 +208,7 @@ class OxfCryo700(Device):
             val = int(args[0])
             if val != 0 and val != 1:
                 raise Exception()
-        except:
+        except Exception:
             raise Exception(
                 "Wrong type of arguments. Status_Format must be an integer, "
                 "0 or 1.")
@@ -225,106 +225,106 @@ class OxfCryo700(Device):
     @attribute(name='GasSetPoint', unit='K')
     def gas_set_point(self):
         self.info_stream("read_GasSetPoint")
-        return self.statusPacket.gas_set_point
+        return self.status_packet.gas_set_point
 
     @attribute(name='GasTemp', unit='K')
     def gas_temp(self):
         self.info_stream("read_GasSetPoint")
-        return self.statusPacket.gas_temp
+        return self.status_packet.gas_temp
 
     @attribute(name='GasError', unit='K')
     def gas_error(self):
         self.info_stream("read_GasError")
-        return self.statusPacket.gas_error
+        return self.status_packet.gas_error
 
     @attribute(name='RunMode', dtype=str)
     def run_mode(self):
         self.info_stream("read_RunMode")
-        return self.statusPacket.run_mode
+        return self.status_packet.run_mode
 
     @attribute(name='Phase', dtype=str)
     def read_Phase(self):
         self.info_stream("read_Phase")
-        return self.statusPacket.phase
+        return self.status_packet.phase
 
     @attribute(name='RampRate', dtype=int)
     def ramp_rate(self):
         self.info_stream("read_RampRate")
-        return self.statusPacket.ramp_rate
+        return self.status_packet.ramp_rate
 
     @attribute(name='TargetTemp')
     def target_temp(self, the_att):
         self.info_stream("read_TargetTemp")
-        return self.statusPacket.target_temp
+        return self.status_packet.target_temp
 
     @attribute(name='EvapTemp', unit='K')
-    def read_EvapTemp(self):
+    def evap_temp(self):
         self.info_stream("read_EvapTemp")
-        return self.statusPacket.evap_temp
+        return self.status_packet.evap_temp
 
     @attribute(name='SuctTemp', unit='K')
     def suct_temp(self):
         self.info_stream("read_SuctTemp")
-        return self.statusPacket.suct_temp
+        return self.status_packet.suct_temp
 
     @attribute(name='GasFlow', unit='l/min')
     def gas_flow(self):
         self.info_stream("read_GasFlow")
-        return self.statusPacket.gas_flow
+        return self.status_packet.gas_flow
 
     @attribute(name='GasHeat', unit='%')
     def gas_heat(self):
         self.info_stream("read_GasHeat")
-        return self.statusPacket.gas_heat
+        return self.status_packet.gas_heat
 
     @attribute(name='EvapHeat', unit='%')
     def evap_heat(self):
         self.info_stream("read_EvapHeat")
-        return self.statusPacket.evap_heat
+        return self.status_packet.evap_heat
 
     @attribute(name='SuctHeat', unit='%')
     def suct_heat(self):
         self.info_stream("read_SuctHeat")
-        return self.statusPacket.suct_heat
+        return self.status_packet.suct_heat
 
     @attribute(name='LinePressure', unit='bar')
     def line_pressure(self):
         self.info_stream("read_LinePressure")
-        return self.statusPacket.line_pressure
+        return self.status_packet.line_pressure
 
     @attribute(name='Alarm', dtype=str)
     def alarm(self):
         self.info_stream("read_Alarm")
-        return self.statusPacket.alarm
+        return self.status_packet.alarm
 
     @attribute(name='RunTime', dtype=str)
     def run_time(self):
         self.info_stream("read_RunTime")
-        result = '{}d, {}h, {}m'.format(self.statusPacket.run_days,
-                                        self.statusPacket.run_hours,
-                                        self.statusPacket.run_mins)
+        result = '{}d, {}h, {}m'.format(self.status_packet.run_days,
+                                        self.status_packet.run_hours,
+                                        self.status_packet.run_mins)
         return result
 
     @attribute(name='ControllerNr', dtype=int)
     def controller_number(self):
         self.info_stream("read_ControllerNumber")
-        return self.statusPacket.controller_nb
+        return self.status_packet.controller_nb
 
     @attribute(name='SoftwareVersion', dtype=int)
     def software_version(self):
         self.info_stream("read_SoftwareVersion")
-        return self.statusPacket.software_version
+        return self.status_packet.software_version
 
     @attribute(name='EvapAdjust', dtype=int)
     def evap_adjust(self):
         self.info_stream("read_EvapAdjust")
-        return self.statusPacket.evap_adjust
+        return self.status_packet.evap_adjust
 
     @attribute(name='TurboMode', dtype=bool)
     def turbo_mode(self):
         self.info_stream("read_TurboModet")
-        flow = self.statusPacket.gas_flow
-        phase = self.statusPacket.phase
+        flow = self.status_packet.gas_flow
+        phase = self.status_packet.phase
         self.info_stream('flow: {} , phase: {}'.format(flow, phase))
         if flow > 5 and phase != "Cool":
             turbomode = True
@@ -332,28 +332,28 @@ class OxfCryo700(Device):
             turbomode = False
         return turbomode
 
-    def updateStatusPacket(self):
-        self.statusThreadStop.clear()
+    def update_status_packet(self):
+        self.status_thread_stop.clear()
         # flushing input buffer
-        self.flushInputBuffer()
-        # updaitng loop
-        while not self.statusThreadStop.isSet():
+        self.flush_input_buffer()
+        # updating loop
+        while not self.status_thread_stop.isSet():
             data = self.serial.read(32)
-            # if there are newer packets in the buffer, we do not process
-            # and just continue
             if self.serial.inWaiting() > 32:
+                # if there are newer packets in the buffer, we do not process
+                # and just continue
                 continue
-            else:
-                data = map(ord, data)
-                try:
-                    self.statusPacket = StatusPacket(data)
-                except Exception, e:
-                    self.error_stream("Error while parsing read data: %s" % e)
-                    self.error_stream(
-                        "Flushing input buffer to start from the skratch")
-                    self.flushInputBuffer()
 
-    def flushInputBuffer(self):
+            data = map(ord, data)
+            try:
+                self.status_packet = StatusPacket(data)
+            except Exception as e:
+                self.error_stream("Error while parsing read data: %s" % e)
+                self.error_stream("Flushing input buffer to start from "
+                                  "the skratch")
+                self.flush_input_buffer()
+
+    def flush_input_buffer(self):
         while self.serial.inWaiting() > 0:
             self.serial.flushInput()
 
