@@ -192,8 +192,8 @@ class StatusPacket:
         self.alarm = self.ALARM_CODES[self.alarm_code]
         rt = data[self.RunTime_s_idx:self.RunTime_s_idx + 2]
         self.run_time = self.getShort(rt)
-        self.run_days = self.run_time / (60 * 24)
-        self.run_hours = (self.run_time - (self.run_days * 24 * 60)) / 60
+        self.run_days = self.run_time // (60 * 24)
+        self.run_hours = (self.run_time - (self.run_days * 24 * 60)) // 60
         run_min = (self.run_days * 24 * 60) - (self.run_hours * 60)
         self.run_mins = self.run_time - run_min
         nb = data[self.ControllerNumber_s_idx:self.ControllerNumber_s_idx + 2]
