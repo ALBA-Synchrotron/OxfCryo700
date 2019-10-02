@@ -3,7 +3,7 @@ import serial
 from tango import DevState
 from tango.server import Device, attribute, command
 from tango.server import device_property
-from oxfordcryo import StatusPacket, CSCOMMAND, splitBytes
+from .oxfordcryo import StatusPacket, CSCOMMAND, splitBytes
 
 
 class OxfCryo700(Device):
