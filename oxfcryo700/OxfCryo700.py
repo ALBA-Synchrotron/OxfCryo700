@@ -1,175 +1,26 @@
-import PyTango
 import sys
 import threading
-
 import serial
-
+import PyTango
+from tango import DevState
+from tango.server import Device, attribute, command
+from tango.server import device_property
 from oxfordcryo import StatusPacket, CSCOMMAND, splitBytes
 
 
-class OxfCryo700Class(PyTango.DeviceClass):
-    cmd_list = {
-        'Restart': [[PyTango.ArgType.DevVoid, ""],
-                    [PyTango.ArgType.DevVoid, ""]],
+class OxfCryo700(Device):
+    port = device_property(dtype=str, doc='Serial port name (/dev/ttyXX)')
 
-        'Stop': [[PyTango.ArgType.DevVoid, ""],
-                 [PyTango.ArgType.DevVoid, ""]],
-
-        'Purge': [[PyTango.ArgType.DevVoid, ""],
-                  [PyTango.ArgType.DevVoid, ""]],
-
-        'Turbo': [[PyTango.ArgType.DevVarStringArray,
-                   "Turbo (0 or 1 Switch Turbo)"],
-                  [PyTango.ArgType.DevVoid, ""]],
-
-        'Cool': [[PyTango.ArgType.DevDouble,
-                  "Temperature in Kelvins,Value between 80 to 400 "],
-                 [PyTango.ArgType.DevVoid, ""]],
-
-        'Ramp': [[PyTango.ArgType.DevVarStringArray,
-                  "Rate, FinalTemperature"],
-                 [PyTango.ArgType.DevVoid, ""]],
-
-        'Pause': [[PyTango.ArgType.DevVoid,
-                   "Pause command identifier - enter temporary Hold"],
-                  [PyTango.ArgType.DevVoid, ""]],
-
-        'Plat': [[PyTango.ArgType.DevDouble,
-                  "Plat command identifier - parameter follows"],
-                 [PyTango.ArgType.DevVoid, ""]],
-
-        'End': [[PyTango.ArgType.DevDouble,
-                 "End command identifier - parameter follows"],
-                [PyTango.ArgType.DevVoid, ""]],
-
-        'Resume': [[PyTango.ArgType.DevVoid,
-                    "Resume cmd identifier - exit temporary Hold"],
-                   [PyTango.ArgType.DevVoid, ""]],
-
-        'CryoShutter_Start_Auto': [[PyTango.ArgType.DevDouble,
-                                    "Shut the CryoShutter for the "
-                                    "specified length of time"],
-                                   [PyTango.ArgType.DevVoid, ""]],
-
-        'CryoShutter_Start_Man': [[PyTango.ArgType.DevVoid,
-                                   "Shut the CryoShutter until a "
-                                   "CSCOMMAND_CRYOSHUTTER_STOP is "
-                                   "received"],
-                                  [PyTango.ArgType.DevVoid, ""]],
-
-        'CryoShutter_Stop': [[PyTango.ArgType.DevVoid,
-                              "Open the CryoShutter"],
-                             [PyTango.ArgType.DevVoid, ""]],
-
-        'Status_Format': [[PyTango.ArgType.DevVarStringArray,
-                           "Set status packet format"],
-                          [PyTango.ArgType.DevVoid, ""]],
-
-    }
-
-    attr_list = {
-        'GasSetPoint': [[PyTango.ArgType.DevDouble,
-                         PyTango.AttrDataFormat.SCALAR,
-                         PyTango.AttrWriteType.READ],
-                        {'unit': 'K'}],
-        'GasTemp': [[PyTango.ArgType.DevDouble,
-                     PyTango.AttrDataFormat.SCALAR,
-                     PyTango.AttrWriteType.READ],
-                    {'unit': 'K'}],
-        'GasError': [[PyTango.ArgType.DevDouble,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': 'K'}],
-        'RunMode': [[PyTango.ArgType.DevString,
-                     PyTango.AttrDataFormat.SCALAR,
-                     PyTango.AttrWriteType.READ]],
-        'Phase': [[PyTango.ArgType.DevString,
-                   PyTango.AttrDataFormat.SCALAR,
-                   PyTango.AttrWriteType.READ]],
-        'RampRate': [[PyTango.ArgType.DevLong,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': 'K/h'}],
-        'TargetTemp': [[PyTango.ArgType.DevDouble,
-                        PyTango.AttrDataFormat.SCALAR,
-                        PyTango.AttrWriteType.READ]],
-        'EvapTemp': [[PyTango.ArgType.DevDouble,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': 'K'}],
-        'SuctTemp': [[PyTango.ArgType.DevDouble,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': 'K'}],
-        'GasFlow': [[PyTango.ArgType.DevDouble,
-                     PyTango.AttrDataFormat.SCALAR,
-                     PyTango.AttrWriteType.READ],
-                    {'unit': 'l/min'}],
-        'GasHeat': [[PyTango.ArgType.DevLong,
-                     PyTango.AttrDataFormat.SCALAR,
-                     PyTango.AttrWriteType.READ],
-                    {'unit': '%'}],
-        'EvapHeat': [[PyTango.ArgType.DevLong,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': '%'}],
-        'SuctHeat': [[PyTango.ArgType.DevLong,
-                      PyTango.AttrDataFormat.SCALAR,
-                      PyTango.AttrWriteType.READ],
-                     {'unit': '%'}],
-        'LinePressure': [[PyTango.ArgType.DevDouble,
-                          PyTango.AttrDataFormat.SCALAR,
-                          PyTango.AttrWriteType.READ],
-                         {'unit': 'bar'}],
-        'Alarm': [[PyTango.ArgType.DevString,
-                   PyTango.AttrDataFormat.SCALAR,
-                   PyTango.AttrWriteType.READ]],
-        'RunTime': [[PyTango.ArgType.DevString,
-                     PyTango.AttrDataFormat.SCALAR,
-                     PyTango.AttrWriteType.READ]],
-        'ControllerNr': [[PyTango.ArgType.DevLong,
-                          PyTango.AttrDataFormat.SCALAR,
-                          PyTango.AttrWriteType.READ]],
-        'SoftwareVersion': [[PyTango.ArgType.DevLong,
-                             PyTango.AttrDataFormat.SCALAR,
-                             PyTango.AttrWriteType.READ]],
-        'EvapAdjust': [[PyTango.ArgType.DevLong,
-                        PyTango.AttrDataFormat.SCALAR,
-                        PyTango.AttrWriteType.READ]],
-        'TurboMode': [[PyTango.ArgType.DevBoolean,
-                       PyTango.AttrDataFormat.SCALAR,
-                       PyTango.AttrWriteType.READ]],
-
-    }
-
-    device_property_list = {
-        'serialPort': [PyTango.DevString,
-                       "name of the serial port (/dev/ttyXX)",
-                       []]
-    }
-
-    def __init__(self, name):
-        PyTango.DeviceClass.__init__(self, name)
-        self.set_type("TestDevice")
-
-
-class OxfCryo700(PyTango.Device_4Impl):
-    def __init__(self, cl, name):
-        PyTango.Device_4Impl.__init__(self, cl, name)
-        self.info_stream('In OxfCryo700.__init__')
-        OxfCryo700.init_device(self)
-
-    @PyTango.DebugIt()
     def init_device(self):
+        Device.init_device(self)
         self.info_stream('In Python init_device method')
-        self.get_device_properties(self.get_device_class())
-        self.serial = serial.Serial(self.serialPort)
+        self.serial = serial.Serial(self.port)
         self.statusPacket = None
         self.statusThread = threading.Thread(group=None,
                                              target=self.updateStatusPacket)
         self.statusThreadStop = threading.Event()
         self.statusThread.start()
-        self.set_state(PyTango.DevState.ON)
+        self.set_state(DevState.ON)
         self.attr_short_rw = 66
         self.attr_long = 1246
 
@@ -186,6 +37,7 @@ class OxfCryo700(PyTango.Device_4Impl):
     # ------------------------------------------------------------------
 
     @PyTango.DebugIt()
+    @command
     def Restart(self):
         data = [chr(2), chr(CSCOMMAND.RESTART)]
         dataStr = ''.join(data)
@@ -193,6 +45,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def Purge(self):
         data = [chr(2), chr(CSCOMMAND.PURGE)]
         dataStr = ''.join(data)
@@ -200,6 +53,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def Stop(self):
         data = [chr(2), chr(CSCOMMAND.STOP)]
         dataStr = ''.join(data)
@@ -207,6 +61,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command(dtype_in=(float,), doc_in='Rate and FinalTemperature')
     def Ramp(self, args):
         """
         The CSCOMMAND_RAMP command packet, size = 6
@@ -216,16 +71,12 @@ class OxfCryo700(PyTango.Device_4Impl):
         """
 
         if len(args) != 2:
-            raise Exception(
-                "Wrong number of arguments. Required paramters are ramp and "
-                "end temperature.")
-        try:
-            rate = int(args[0])
-            finalTemp = float(args[1])
-        except:
-            raise Exception(
-                "Wrong type of arguments. Ramp must be an integer and end "
-                "temperature a float number.")
+            raise ValueError("Wrong number of arguments. Required paramters "
+                             "are ramp and end temperature.")
+
+        rate = int(args[0])
+        finalTemp = args[1]
+
         finalTemp = int(finalTemp * 100)  # transfering to centi-Kelvin
         rateHigh, rateLow = splitBytes(rate)
         finalTempHigh, finalTempLow = splitBytes(finalTemp)
@@ -236,49 +87,36 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
-    def Turbo(self, args):
+    @command(dtype_in=bool, doc_in='Turn on the Turbo')
+    def Turbo(self, turn_on):
         """
         The CSCOMMAND_TURBO command packet, size = 3
         The Params[] array consists of a single char taking the value either 0
         (switch Turbo off) or 1 (switch Turbo on)
         """
-        if len(args) != 1:
-            raise Exception(
-                "Wrong number of arguments. Required paramters 0 (switch "
-                "Turbo off) or 1 (switch Turbo on).")
-        try:
-            turboState = int(args[0])
-
-            if turboState != 0 and turboState != 1:
-                raise Exception()
-
-        except:
-            raise Exception(
-                "Wrong type of arguments. Turbo must be an integer, "
-                "0 (switch Turbo off) or 1 (switch Turbo on). .")
-
+        if turn_on:
+            turboState = 1
+        else:
+            turboState = 0
         data = [chr(3), chr(CSCOMMAND.TURBO), turboState]
         dataStr = ''.join(data)
         self.debug_stream("Turbo(): sending data: %s" % dataStr)
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command(dtype_in=float, doc_in='Temperature between 80 to 400 Kelvins')
     def Cool(self, temp):
         """
         The	CSCOMMAND_COOL command packet, size = 4
         The Params[] array consists of a short containing the end
         temperature in centi-Kelvin
         """
-        try:
-            coolValue = temp
-            if not (80 <= coolValue <= 400):
-                raise Exception()
-        except:
-            raise Exception(
-                "Wrong arguments. Cool only accept values between 80 to 400")
+        if not (80 <= temp <= 400):
+            raise ValueError("Wrong arguments. Cool only accept values "
+                             "between 80 to 400")
 
-        coolValue = int(coolValue * 100)
-        HIBYTE, LOBYTE = splitBytes(coolValue)
+        cool_value = int(temp * 100)
+        HIBYTE, LOBYTE = splitBytes(cool_value)
 
         data = [chr(4), chr(CSCOMMAND.COOL), HIBYTE, LOBYTE]
         dataStr = ''.join(data)
@@ -286,6 +124,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def Pause(self):
         data = [chr(2), chr(CSCOMMAND.PAUSE)]
         dataStr = ''.join(data)
@@ -293,6 +132,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def Resume(self):
         data = [chr(2), chr(CSCOMMAND.RESUME)]
         dataStr = ''.join(data)
@@ -300,14 +140,15 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
-    def Plat(self, time):
+    @command(dtype_in=int, doc_in='Plat command identifier - parameter '
+                                  'follows')
+    def Plat(self, val):
         """
         The CSCOMMAND_PLAT command packet, size = 4
         The Params[] array consists of a short containing the duration of the
         Plat in minutes
         """
 
-        val = int(time)
         HIBYTE, LOBYTE = splitBytes(val)
         data = [chr(4), chr(CSCOMMAND.PLAT), HIBYTE, LOBYTE]
         dataStr = ''.join(data)
@@ -315,14 +156,14 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
-    def End(self, values):
+    @command(dtype_in=int, doc_in='End command identifier - parameter follows')
+    def End(self, val):
         """
         The CSCOMMAND_END command packet, size = 4
         The Params[] array consists of a short containing desired ramp rate
         in K/hour
         """
 
-        val = int(values)
         HIBYTE, LOBYTE = splitBytes(val)
         data = [chr(4), chr(CSCOMMAND.END), HIBYTE, LOBYTE]
         dataStr = ''.join(data)
@@ -330,13 +171,15 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
-    def CryoShutter_Start_Auto(self, values):
+    @command(dtype_in=float, doc_in='Shyt the Cryosutter for the specified '
+                                    'length of time.')
+    def CryoShutter_Start_Auto(self, value):
         """
         The CSCOMMAND_CRYOSHUTTER_START_AUTO command packet, size = 3
         The Params[] array consists of a short containing the duration of the
         anneal time in tenths of a second
         """
-        val = int(values * 10)
+        val = int(value * 10)
         data = [chr(3), chr(CSCOMMAND.CRYOSHUTTER_START_AUTO), str(val)]
         dataStr = ''.join(data)
         self.debug_stream(
@@ -344,6 +187,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def CryoShutter_Start_Man(self):
         """
         The	CSCOMMAND_CRYOSHUTTER_START_MAN command packet, size = 2
@@ -356,6 +200,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command
     def CryoShutter_Stop(self):
         """
         The	CSCOMMAND_CRYOSHUTTER_STOP command packet, size = 2
@@ -367,6 +212,7 @@ class OxfCryo700(PyTango.Device_4Impl):
         self.serial.write(dataStr)
 
     @PyTango.DebugIt()
+    @command(dtype_in=(str,), doc_in='Set status packet format')
     def Status_Format(self, args):
         """
         The CSCOMMAND_SETSTATUSFORMAT command packet, size = 3
@@ -394,144 +240,134 @@ class OxfCryo700(PyTango.Device_4Impl):
     # ------------------------------------------------------------------
 
     @PyTango.DebugIt()
-    def read_attr_hardware(self, data):
-        self.info_stream('In read_attr_hardware')
-
-
-    @PyTango.DebugIt()
-    def read_GasSetPoint(self, the_att):
+    @attribute(name='GasSetPoint', unit='K')
+    def gas_set_point(self):
         self.info_stream("read_GasSetPoint")
-        gasSetPoint = self.statusPacket.gas_set_point
-        the_att.set_value(gasSetPoint)
-
+        return self.statusPacket.gas_set_point
 
     @PyTango.DebugIt()
-    def read_GasTemp(self, the_att):
+    @attribute(name='GasTemp', unit='K')
+    def gas_temp(self):
         self.info_stream("read_GasSetPoint")
-        gasTemp = self.statusPacket.gas_temp
-        the_att.set_value(gasTemp)
-
+        return self.statusPacket.gas_temp
 
     @PyTango.DebugIt()
-    def read_GasError(self, the_att):
+    @attribute(name='GasError', unit='K')
+    def gas_error(self):
         self.info_stream("read_GasError")
-        gasError = self.statusPacket.gas_error
-        the_att.set_value(gasError)
-
+        return self.statusPacket.gas_error
 
     @PyTango.DebugIt()
-    def read_RunMode(self, the_att):
+    @attribute(name='RunMode', dtype=str)
+    def run_mode(self):
         self.info_stream("read_RunMode")
-        runMode = self.statusPacket.run_mode
-        the_att.set_value(runMode)
-
+        return self.statusPacket.run_mode
 
     @PyTango.DebugIt()
-    def read_Phase(self, the_att):
+    @attribute(name='Phase', dtype=str)
+    def read_Phase(self):
         self.info_stream("read_Phase")
-        phase = self.statusPacket.phase
-        the_att.set_value(phase)
-
+        return self.statusPacket.phase
 
     @PyTango.DebugIt()
-    def read_RampRate(self, the_att):
+    @attribute(name='RampRate', dtype=int)
+    def ramp_rate(self):
         self.info_stream("read_RampRate")
-        rampRate = self.statusPacket.ramp_rate
-        the_att.set_value(rampRate)
-
+        return self.statusPacket.ramp_rate
 
     @PyTango.DebugIt()
-    def read_TargetTemp(self, the_att):
+    @attribute(name='TargetTemp')
+    def target_temp(self, the_att):
         self.info_stream("read_TargetTemp")
-        targetTemp = self.statusPacket.target_temp
-        the_att.set_value(targetTemp)
-
+        return self.statusPacket.target_temp
 
     @PyTango.DebugIt()
-    def read_EvapTemp(self, the_att):
+    @attribute(name='EvapTemp', unit='K')
+    def read_EvapTemp(self):
         self.info_stream("read_EvapTemp")
-        evapTemp = self.statusPacket.evap_temp
-        the_att.set_value(evapTemp)
+        return self.statusPacket.evap_temp
 
     @PyTango.DebugIt()
-    def read_SuctTemp(self, the_att):
+    @attribute(name='SuctTemp', unit='K')
+    def suct_temp(self):
         self.info_stream("read_SuctTemp")
-        suctTemp = self.statusPacket.suct_temp
-        the_att.set_value(suctTemp)
+        return self.statusPacket.suct_temp
 
     @PyTango.DebugIt()
-    def read_GasFlow(self, the_att):
+    @attribute(name='GasFlow', unit='l/min')
+    def gas_flow(self):
         self.info_stream("read_GasFlow")
-        gasFlow = self.statusPacket.gas_flow
-        the_att.set_value(gasFlow)
+        return self.statusPacket.gas_flow
 
     @PyTango.DebugIt()
-    def read_GasHeat(self, the_att):
+    @attribute(name='GasHeat', unit='%')
+    def gas_heat(self):
         self.info_stream("read_GasHeat")
-        gasHeat = self.statusPacket.gas_heat
-        the_att.set_value(gasHeat)
+        return self.statusPacket.gas_heat
 
     @PyTango.DebugIt()
-    def read_EvapHeat(self, the_att):
+    @attribute(name='EvapHeat', unit='%')
+    def evap_heat(self):
         self.info_stream("read_EvapHeat")
-        evapHeat = self.statusPacket.evap_heat
-        the_att.set_value(evapHeat)
+        return self.statusPacket.evap_heat
 
     @PyTango.DebugIt()
-    def read_SuctHeat(self, the_att):
+    @attribute(name='SuctHeat', unit='%')
+    def suct_heat(self):
         self.info_stream("read_SuctHeat")
-        suctHeat = self.statusPacket.suct_heat
-        the_att.set_value(suctHeat)
+        return self.statusPacket.suct_heat
 
     @PyTango.DebugIt()
-    def read_LinePressure(self, the_att):
+    @attribute(name='LinePressure', unit='bar')
+    def line_pressure(self):
         self.info_stream("read_LinePressure")
-        linePressure = self.statusPacket.line_pressure
-        the_att.set_value(linePressure)
+        return self.statusPacket.line_pressure
 
     @PyTango.DebugIt()
-    def read_Alarm(self, the_att):
+    @attribute(name='Alarm', dtype=str)
+    def alarm(self):
         self.info_stream("read_Alarm")
-        alarm = self.statusPacket.alarm
-        the_att.set_value(alarm)
+        return self.statusPacket.alarm
 
     @PyTango.DebugIt()
-    def read_RunTime(self, the_att):
+    @attribute(name='RunTime', dtype=str)
+    def run_time(self):
         self.info_stream("read_RunTime")
-        runTime = "%dd, %dh, %dm" % (self.statusPacket.run_days,
-                                     self.statusPacket.run_hours,
-                                     self.statusPacket.run_mins)
-        the_att.set_value(runTime)
+        result = '{}d, {}h, {}m'.format(self.statusPacket.run_days,
+                                        self.statusPacket.run_hours,
+                                        self.statusPacket.run_mins)
+        return result
 
     @PyTango.DebugIt()
-    def read_ControllerNr(self, the_att):
+    @attribute(name='ControllerNr', dtype=int)
+    def controller_number(self):
         self.info_stream("read_ControllerNumber")
-        nr = self.statusPacket.controller_nb
-        the_att.set_value(nr)
+        return self.statusPacket.controller_nb
 
     @PyTango.DebugIt()
-    def read_SoftwareVersion(self, the_att):
+    @attribute(name='SoftwareVersion', dtype=int)
+    def software_version(self):
         self.info_stream("read_SoftwareVersion")
-        ver = self.statusPacket.software_version
-        the_att.set_value(ver)
+        return self.statusPacket.software_version
 
     @PyTango.DebugIt()
-    def read_EvapAdjust(self, the_att):
+    @attribute(name='EvapAdjust', dtype=int)
+    def evap_adjust(self):
         self.info_stream("read_EvapAdjust")
-        evapAdjust = self.statusPacket.evap_adjust
-        the_att.set_value(evapAdjust)
+        return self.statusPacket.evap_adjust
 
     @PyTango.DebugIt()
-    def read_TurboMode(self, the_att):
+    @attribute(name='TurboMode', dtype=bool)
+    def turbo_mode(self):
         self.info_stream("read_TurboModet")
         flow = self.statusPacket.gas_flow
         phase = self.statusPacket.phase
-        self.info_stream("flow: %f , phase: %s " % (flow, phase))
+        self.info_stream('flow: {} , phase: {}'.format(flow, phase))
         if flow > 5 and phase != "Cool":
             turbomode = True
         else:
             turbomode = False
-        the_att.set_value(turbomode)
+        return turbomode
 
     @PyTango.InfoIt()
     def updateStatusPacket(self):
@@ -560,10 +396,9 @@ class OxfCryo700(PyTango.Device_4Impl):
             self.serial.flushInput()
 
 
-if __name__ == '__main__':
-    util = PyTango.Util(sys.argv)
-    util.add_class(OxfCryo700Class, OxfCryo700)
+def main():
+    OxfCryo700.run_server()
 
-    U = PyTango.Util.instance()
-    U.server_init()
-    U.server_run()
+
+if __name__ == '__main__':
+    main()
