@@ -239,7 +239,7 @@ class OxfCryo700(Device):
         return self.status_packet.run_mode
 
     @attribute(name='Phase', dtype=str)
-    def read_Phase(self):
+    def phase(self):
         self.info_stream("read_Phase")
         return self.status_packet.phase
 
