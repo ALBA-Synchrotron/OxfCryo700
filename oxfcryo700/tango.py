@@ -19,10 +19,6 @@ class OxfCryo700(Device):
         self.status_thread_stop = threading.Event()
         self.status_thread.start()
         self.set_state(DevState.ON)
-        self.attr_short_rw = 66
-        self.attr_long = 1246
-
-    # ------------------------------------------------------------------
 
     def delete_device(self):
         self.status_thread_stop.set()
@@ -253,7 +249,7 @@ class OxfCryo700(Device):
         return self.status_packet.ramp_rate
 
     @attribute(name='TargetTemp')
-    def target_temp(self, the_att):
+    def target_temp(self):
         self.info_stream("read_TargetTemp")
         return self.status_packet.target_temp
 
