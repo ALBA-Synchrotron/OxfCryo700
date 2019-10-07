@@ -145,20 +145,21 @@ class OxfCryo700(Device):
         self.debug_stream("End(): sending data: {}".format(data))
         self.serial.write(data)
 
-    @command(dtype_in=float, doc_in='Shyt the Cryosutter for the specified '
-                                    'length of time.')
-    def CryoShutter_Start_Auto(self, value):
-        """
-        The CSCOMMAND_CRYOSHUTTER_START_AUTO command packet, size = 3
-        The Params[] array consists of a short containing the duration of the
-        anneal time in tenths of a second
-        """
-        val = int(value * 10)
-        data = [chr(3), chr(CSCOMMAND.CRYOSHUTTER_START_AUTO), str(val)]
-        data_str = ''.join(data)
-        self.debug_stream(
-            "CryoShutter_Start_Auto(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+    # Command without description on the manual. It is not used on the
+    # beamlines
+    # @command(dtype_in=float, doc_in='Shyt the Cryosutter for the specified '
+    #                                 'length of time.')
+    # def CryoShutter_Start_Auto(self, value):
+    #     """
+    #     The CSCOMMAND_CRYOSHUTTER_START_AUTO command packet, size = 3
+    #     The Params[] array consists of a short containing the duration of the
+    #     anneal time in tenths of a second
+    #     """
+    #     val = int(value * 10)
+    #     data = [3, CSCOMMAND.CRYOSHUTTER_START_AUTO, val]
+    #     self.debug_stream("CryoShutter_Start_Auto(): "
+    #                       "sending data: {}".format(data))
+    #     self.serial.write(data)
 
     @command
     def CryoShutter_Start_Man(self):
