@@ -267,6 +267,6 @@ def splitBytes(number):
         raise Exception(
             "splitBytes(number): Wrong function parameter. It must be an "
             "integer.")
-    low = chr(number & 0b11111111)
-    high = chr((number >> 8) & 0b11111111)
+    low = number & 0b11111111
+    high = (number >> 8) & 0b11111111
     return high, low

@@ -25,32 +25,30 @@ class OxfCryo700(Device):
         self.status_thread.join(3.0)
         self.info_stream('OxfCryo700.delete_device')
 
-    def _write_cmd(self, cmd):
-        self.serial.write(cmd.encode())
+    def _write(self, data):
+        data_bytes = bytes(data)
+        self.serial.write(data_bytes)
     # ------------------------------------------------------------------
     # COMMANDS
     # ------------------------------------------------------------------
 
     @command
     def Restart(self):
-        data = [chr(2), chr(CSCOMMAND.RESTART)]
-        data_str = ''.join(data)
-        self.debug_stream("Restart(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [2, CSCOMMAND.RESTART]
+        self.debug_stream("Restart(): sending data: {}".format(data))
+        self._write(data)
 
     @command
     def Purge(self):
-        data = [chr(2), chr(CSCOMMAND.PURGE)]
-        data_str = ''.join(data)
-        self.debug_stream("PURGE(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [2, CSCOMMAND.PURGE]
+        self.debug_stream("PURGE(): sending data: {}".format(data))
+        self._write(data)
 
     @command
     def Stop(self):
-        data = [chr(2), chr(CSCOMMAND.STOP)]
-        data_str = ''.join(data)
-        self.debug_stream("Stop(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [2, CSCOMMAND.STOP]
+        self.debug_stream("Stop(): sending data: {}".format(data))
+        self._write(data)
 
     @command(dtype_in=(float,), doc_in='Rate and FinalTemperature')
     def Ramp(self, args):
@@ -71,11 +69,10 @@ class OxfCryo700(Device):
         finalTemp = int(finalTemp * 100)  # transfering to centi-Kelvin
         rateHigh, rateLow = splitBytes(rate)
         finalTempHigh, finalTempLow = splitBytes(finalTemp)
-        data = [chr(6), chr(CSCOMMAND.RAMP), rateHigh, rateLow, finalTempHigh,
+        data = [6, CSCOMMAND.RAMP, rateHigh, rateLow, finalTempHigh,
                 finalTempLow]
-        data_str = ''.join(data)
-        self.debug_stream("Ramp(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        self.debug_stream("Ramp(): sending data: {}".format(data))
+        self._write(data)
 
     @command(dtype_in=bool, doc_in='Turn on the Turbo')
     def Turbo(self, turn_on):
@@ -88,10 +85,9 @@ class OxfCryo700(Device):
             turboState = 1
         else:
             turboState = 0
-        data = [chr(3), chr(CSCOMMAND.TURBO), turboState]
-        data_str = ''.join(data)
-        self.debug_stream("Turbo(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [3, CSCOMMAND.TURBO, turboState]
+        self.debug_stream("Turbo(): sending data: {}".format(data))
+        self._write(data)
 
     @command(dtype_in=float, doc_in='Temperature between 80 to 400 Kelvins')
     def Cool(self, temp):
@@ -106,25 +102,21 @@ class OxfCryo700(Device):
 
         cool_value = int(temp * 100)
         HIBYTE, LOBYTE = splitBytes(cool_value)
-
-        data = [chr(4), chr(CSCOMMAND.COOL), HIBYTE, LOBYTE]
-        data_str = ''.join(data)
-        self.debug_stream("Cool(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [4, CSCOMMAND.COOL, HIBYTE, LOBYTE]
+        self.debug_stream("Cool(): sending data: {}".format(data))
+        self._write(data)
 
     @command
     def Pause(self):
-        data = [chr(2), chr(CSCOMMAND.PAUSE)]
-        data_str = ''.join(data)
-        self.debug_stream("Pause(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [2, CSCOMMAND.PAUSE]
+        self.debug_stream("Pause(): sending data:{}".format(data))
+        self._write(data)
 
     @command
     def Resume(self):
-        data = [chr(2), chr(CSCOMMAND.RESUME)]
-        data_str = ''.join(data)
-        self.debug_stream("Resume(): sending data: %s" % data_str)
-        self._write_cmd(data_str)
+        data = [2, CSCOMMAND.RESUME]
+        self.debug_stream("Resume(): sending data: {}".format(data))
+        self._write(data)
 
     @command(dtype_in=int, doc_in='Plat command identifier - parameter '
                                   'follows')
@@ -136,10 +128,9 @@ class OxfCryo700(Device):
         """
 
         HIBYTE, LOBYTE = splitBytes(val)
-        data = [chr(4), chr(CSCOMMAND.PLAT), HIBYTE, LOBYTE]
-        data_str = ''.join(data)
-        self.debug_stream("Plat(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+        data = [4, CSCOMMAND.PLAT, HIBYTE, LOBYTE]
+        self.debug_stream("Plat(): sending data: {}".format(data))
+        self.serial.write(data)
 
     @command(dtype_in=int, doc_in='End command identifier - parameter follows')
     def End(self, val):
@@ -150,10 +141,9 @@ class OxfCryo700(Device):
         """
 
         HIBYTE, LOBYTE = splitBytes(val)
-        data = [chr(4), chr(CSCOMMAND.END), HIBYTE, LOBYTE]
-        data_str = ''.join(data)
-        self.debug_stream("End(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+        data = [4, CSCOMMAND.END, HIBYTE, LOBYTE]
+        self.debug_stream("End(): sending data: {}".format(data))
+        self.serial.write(data)
 
     @command(dtype_in=float, doc_in='Shyt the Cryosutter for the specified '
                                     'length of time.')
@@ -176,11 +166,10 @@ class OxfCryo700(Device):
         The	CSCOMMAND_CRYOSHUTTER_START_MAN command packet, size = 2
         Shut until CSCOMMAND_CRYOSHUTTER_STOP
         """
-        data = [chr(2), chr(CSCOMMAND.CRYOSHUTTER_START_MAN)]
-        data_str = ''.join(data)
-        self.debug_stream(
-            "CryoShutter_Start_Man(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+        data = [2, CSCOMMAND.CRYOSHUTTER_START_MAN]
+        self.debug_stream("CryoShutter_Start_Man(): "
+                          "sending data: {}".format(data))
+        self.serial.write(data)
 
     @command
     def CryoShutter_Stop(self):
@@ -188,12 +177,13 @@ class OxfCryo700(Device):
         The	CSCOMMAND_CRYOSHUTTER_STOP command packet, size = 2
         Open the CryoShutter
         """
-        data = [chr(2), chr(CSCOMMAND.CRYOSHUTTER_STOP)]
-        data_str = ''.join(data)
-        self.debug_stream("CryoShutter_Stop(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+        data = [2, CSCOMMAND.CRYOSHUTTER_STOP]
+        self.debug_stream("CryoShutter_Stop(): "
+                          "sending data: {}".fomat(data))
+        self.serial.write(data)
 
-    @command(dtype_in=(str,), doc_in='Set status packet format')
+    @command(dtype_in=int, doc_in='Set status packet format: 0 old, '
+                                  '1 extended')
     def Status_Format(self, args):
         """
         The CSCOMMAND_SETSTATUSFORMAT command packet, size = 3
@@ -211,10 +201,10 @@ class OxfCryo700(Device):
                 "Wrong type of arguments. Status_Format must be an integer, "
                 "0 or 1.")
 
-        data = [chr(3), chr(CSCOMMAND.SETSTATUSFORMAT), val]
-        data_str = ''.join(data)
-        self.debug_stream("Status_Format(): sending data: %s" % data_str)
-        self.serial.write(data_str)
+        data = [3, CSCOMMAND.SETSTATUSFORMAT, val]
+        self.debug_stream("Status_Format(): "
+                          "sending data: {}".format(data))
+        self.serial.write(data)
 
     # ------------------------------------------------------------------
     # ATTRIBUTES
