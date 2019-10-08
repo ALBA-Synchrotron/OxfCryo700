@@ -180,7 +180,7 @@ class OxfCryo700(Device):
         """
         data = [2, CSCOMMAND.CRYOSHUTTER_STOP]
         self.debug_stream("CryoShutter_Stop(): "
-                          "sending data: {}".fomat(data))
+                          "sending data: {}".format(data))
         self.serial.write(data)
 
     @command(dtype_in=int, doc_in='Set status packet format: 0 old, '
