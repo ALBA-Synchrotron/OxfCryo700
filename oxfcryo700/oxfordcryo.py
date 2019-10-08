@@ -192,8 +192,8 @@ class StatusPacket:
         self.alarm = self.ALARM_CODES[self.alarm_code]
         rt = data[self.RunTime_s_idx:self.RunTime_s_idx + 2]
         self.run_time = self.getShort(rt)
-        self.run_days = self.run_time / (60 * 24)
-        self.run_hours = (self.run_time - (self.run_days * 24 * 60)) / 60
+        self.run_days = self.run_time // (60 * 24)
+        self.run_hours = (self.run_time - (self.run_days * 24 * 60)) // 60
         run_min = (self.run_days * 24 * 60) - (self.run_hours * 60)
         self.run_mins = self.run_time - run_min
         nb = data[self.ControllerNumber_s_idx:self.ControllerNumber_s_idx + 2]
@@ -217,32 +217,35 @@ class StatusPacket:
 
     def __repr__(self):
         pretty_print = 'Status Packet:'
-        pretty_print += '\nlength: %d' % self.length
-        pretty_print += '\ntype: %d' % self.type
-        pretty_print += '\ngas set point: %.2f (K)' % self.gas_set_point
-        pretty_print += '\ngas temp: %.2f (K)' % self.gas_temp
-        pretty_print += '\ngas error: %.2f (K)' % self.gas_error
-        pretty_print += '\nrun mode code: %d' % self.run_mode_code
-        pretty_print += '\nrun mode: %s' % self.run_mode
-        pretty_print += '\nphase code: %d' % self.phase_code
-        pretty_print += '\nphase: %s' % self.phase
-        pretty_print += '\nramp rate: %d (K/h)' % self.ramp_rate
-        pretty_print += '\ntarget temp: %.2f (K)' % self.target_temp
-        pretty_print += '\nevap temp: %.2f (K)' % self.evap_temp
-        pretty_print += '\nsuct temp: %.2f (K)' % self.suct_temp
-        pretty_print += '\nremaining: %d' % self.remaining
-        pretty_print += '\ngas flow: %f (l/min)' % self.gas_flow
-        pretty_print += '\ngas heat: %d %%' % self.gas_heat
-        pretty_print += '\nevap heat: %d %%' % self.evap_heat
-        pretty_print += '\nsuct heat: %d %%' % self.suct_heat
-        pretty_print += '\nline pressure: %d (100*bar)' % self.line_pressure
+        pretty_print += '\nlength: {}'.format(self.length)
+        pretty_print += '\ntype: {}'.format(self.type)
+        pretty_print += '\ngas set point: {:.2f} ' \
+                        '(K)'.format(self.gas_set_point)
+        pretty_print += '\ngas temp: {:.2f} (K)'.format(self.gas_temp)
+        pretty_print += '\ngas error: {:.2f} (K)'.format(self.gas_error)
+        pretty_print += '\nrun mode code: {}'.format(self.run_mode_code)
+        pretty_print += '\nrun mode: {}'.format(self.run_mode)
+        pretty_print += '\nphase code: {}'.format(self.phase_code)
+        pretty_print += '\nphase: {}'.format(self.phase)
+        pretty_print += '\nramp rate: {} (K/h)'.format(self.ramp_rate)
+        pretty_print += '\ntarget temp: {:.2f} (K)'.format(self.target_temp)
+        pretty_print += '\nevap temp: {:.2f} (K)'.format(self.evap_temp)
+        pretty_print += '\nsuct temp: {:.2f} (K)'.format(self.suct_temp)
+        pretty_print += '\nremaining: {}'.format(self.remaining)
+        pretty_print += '\ngas flow: {} (l/min)'.format(self.gas_flow)
+        pretty_print += '\ngas heat: {} %'.format(self.gas_heat)
+        pretty_print += '\nevap heat: {} %'.format(self.evap_heat)
+        pretty_print += '\nsuct heat: {} %'.format(self.suct_heat)
+        pretty_print += '\nline pressure: {} ' \
+                        '(100*bar)'.format(self.line_pressure)
         pretty_print += '\nalarm code: %d' % self.alarm_code
         pretty_print += '\nalarm: %s' % self.alarm
-        pretty_print += '\nrun time: %d (min): %dd %dh %dm' % (
-            self.run_time, self.run_days, self.run_hours, self.run_mins)
-        pretty_print += '\ncontroller number: %d' % self.controller_nb
-        pretty_print += '\nsoftware version: %d' % self.software_version
-        pretty_print += '\nevap adjust: %d' % self.evap_adjust
+        pretty_print += '\nrun time: {} (min): {}d {}h ' \
+                        '{}m'.format(self.run_time, self.run_days,
+                                     self.run_hours, self.run_mins)
+        pretty_print += '\ncontroller number: {}'.format(self.controller_nb)
+        pretty_print += '\nsoftware version: {}'.format(self.software_version)
+        pretty_print += '\nevap adjust: {}'.format(self.evap_adjust)
         return pretty_print
 
 
@@ -264,6 +267,6 @@ def splitBytes(number):
         raise Exception(
             "splitBytes(number): Wrong function parameter. It must be an "
             "integer.")
-    low = chr(number & 0b11111111)
-    high = chr((number >> 8) & 0b11111111)
+    low = number & 0b11111111
+    high = (number >> 8) & 0b11111111
     return high, low
