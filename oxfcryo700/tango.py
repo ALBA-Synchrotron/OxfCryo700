@@ -12,7 +12,7 @@ class OxfCryo700(Device):
     def init_device(self):
         Device.init_device(self)
         self.info_stream('In Python init_device method')
-        self.serial = serial.Serial(self.port)
+        self.serial = serial.serial_for_url(self.port)
         self.status_packet = None
         self.status_thread = threading.Thread(group=None,
                                               target=self.update_status_packet)
